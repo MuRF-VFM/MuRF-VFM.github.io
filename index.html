@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <meta name="description" content="Evaluating Large Language Models on Vector Graphics Understanding and Generation">
+  <meta name="keywords" content="evaluating large language models on vector graphics understanding and generation">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>MuRF</title>
+
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Google+Sans|Noto+Sans|Castoro">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.1/css/bulma.min.css">
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/jpswalsh/academicons@1/css/academicons.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css">
+  <link rel="stylesheet" href="index.css">
+  <link rel="icon" href="images/logo.svg">
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+
+
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+  <script defer src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/js/all.min.js"></script>
+  <script type="module" src="https://gradio.s3-us-west-2.amazonaws.com/4.8.0/gradio.js"></script>
+  <script>
+    function resize_pdf() {
+      const ref_element = document.querySelectorAll('.container.is-max-desktop')[0];
+      const ref_style = window.getComputedStyle(ref_element);
+      const target_width = ref_element.clientWidth - parseFloat(ref_style.paddingLeft) - parseFloat(ref_style.paddingRight);
+      const resizing_elements = document.getElementsByClassName("auto-resize-pdf")
+      for (let i = 0; i < resizing_elements.length; i++) {
+        let e = resizing_elements[i];
+        const origin_width = parseFloat(e.getAttribute("ori-width"));
+        const origin_height = parseFloat(e.getAttribute("ori-height"));
+        const scale = target_width / origin_width;
+        if (scale > 1) {
+          e.style.transformOrigin = "center top";
+        } else {
+          e.style.transformOrigin = "left top";
+        }
+        e.style.transform = `scale(${scale}, ${scale})`;
+        e.style.width = origin_width * scale + "px";
+        e.style.height = origin_height * scale + "px";
+        if (e.hasAttribute("scale")) {
+          const sscale = parseFloat(e.getAttribute("scale"))
+          e.parentElement.style.transform = `scale(${sscale}, ${sscale})`;
+          e.parentElement.style.height = origin_height * scale * sscale + "px";
+          e.parentElement.style.transformOrigin = "center top";
+        }
+
+      }
+    }
+    window.onresize = function (event) {
+      resize_pdf()
+    };
+    window.onload = function (event) {
+      resize_pdf()
+    }
+  </script>
+</head>
+
+<style>
+  .expandable-card .card-text-container {
+    max-height: 200px;
+    overflow-y: hidden;
+    position: relative;
+  }
+
+  .expandable-card.expanded .card-text-container {
+    max-height: none;
+  }
+
+  .expand-btn {
+    position: relative;
+    display: none;
+    background-color: rgba(255, 255, 255, 0.8);
+    /* margin-top: -20px; */
+    /* justify-content: center; */
+    color: #510c75;
+    border-color: transparent;
+  }
+
+  .expand-btn:hover {
+    background-color: rgba(200, 200, 200, 0.8);
+    text-decoration: none;
+    border-color: transparent;
+    color: #510c75;
+  }
+
+  .expand-btn:focus {
+    outline: none;
+    text-decoration: none;
+  }
+
+  .expandable-card:not(.expanded) .card-text-container:after {
+    content: "";
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 90px;
+    background: linear-gradient(rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 1));
+  }
+
+  .expandable-card:not(.expanded) .expand-btn {
+    margin-top: -40px;
+  }
+
+  .card-body {
+    padding-bottom: 5px;
+  }
+
+  .vertical-flex-layout {
+    justify-content: center;
+    align-items: center;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+  }
+
+  .figure-img {
+    max-width: 100%;
+    height: auto;
+  }
+
+  .adjustable-font-size {
+    font-size: calc(0.5rem + 2vw);
+  }
+
+  .chat-history {
+    flex-grow: 1;
+    overflow-y: auto;
+    /* overflow-x: hidden; */
+    padding: 5px;
+    border-bottom: 1px solid #ccc;
+    margin-bottom: 10px;
+  }
+
+  #gradio pre {
+    background-color: transparent;
+  }
+
+  .author-block a {
+    color: #008AD7;
+    font-weight: normal;
+  }
+
+  /* Adjust the vertical alignment and font size of the superscript */
+  .author-block a sup {
+    vertical-align: baseline;
+    position: relative;
+    top: -0.3em;
+    /* Adjusts the position slightly above the baseline */
+    right: -0.1em;
+    /* Adjusts the position slightly to the right */
+    font-size: smaller;
+    /* Makes the font size smaller if needed */
+  }
+</style>
+
+<body>
+
+
+  <section class="hero">
+    <div class="hero-body">
+      <div class="container is-max-desktop">
+        <div class="columns is-centered">
+          <div class="column has-text-centered">
+            <h1 class="title is-1 publication-title">
+              <!--<img src="images/logo.svg" style="width:1.6em;vertical-align: middle" alt="Logo">-->
+              <span class="is-size-1">MuRF</span>
+            </h1>
+            <h3 class="title is-3 publication-title">Unlocking the Multi-Scale Potential of Vision Foundation Models</h3>
+            <h5 class="subtitle is-4 publication-awards">arXiv</h5>
+            <div class="is-size-4 publication-authors">
+
+
+              <span class="author-block">
+                <a href="https://www.bocheng.me/">Bocheng Zou<sup>&#8224</sup></a>,
+              </span>
+
+
+              <span class="author-block">
+                <a href="https://pages.cs.wisc.edu/~mucai/">Mu Cai<sup>&#8224</sup></a>,
+              </span>
+
+
+              <span class="author-block">
+                <a href="https://markstanl.com/">Mark Stanley<sup>&#42;</sup></a>,
+              </span>
+
+              <span class="author-block">
+                <a href="https://www.linkedin.com/in/dingfulu/">Dingfu Lu<sup>&#42;</sup></a>,
+              </span>
+
+
+              <span class="author-block">
+                <a href="https://pages.cs.wisc.edu/~yongjaelee/" style="color:#008AD7;font-weight:normal;">Yong Jae
+                  Lee</a>
+              </span>
+            </div>
+
+            <div class="is-size-5 publication-authors">
+              <span class="author-block"><sup>&#8224;</sup>Equal Contribution</span>
+              <span class="author-block"><sup>&#42;</sup>Equal Second Author</span>
+            </div>
+
+
+            <div class="is-size-4 publication-authors">
+              <span class="author-block">University of Wisconsin-Madison</span>
+            </div>
+
+
+            <div class="column has-text-centered">
+              <div class="publication-links">
+                <span class="link-block">
+                  <a href="" target="_blank"
+                    class="external-link button is-normal is-rounded is-dark">
+                    <span class="icon">
+                      <i class="ai ai-arxiv"></i>
+                    </span>
+                    <span>arXiv (coming soon)</span>
+                  </a>
+                </span>
+                <span class="link-block">
+                  <a href="https://github.com/orgs/MuRF-VFM/repositories" target="_blank"
+                    class="external-link button is-normal is-rounded is-dark">
+                    <span class="icon">
+                      <i class="fab fa-github"></i>
+                    </span>
+                    <span>Code</span>
+                  </a>
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="hero teaser">
+    <div class="container is-max-desktop">
+      <div class="hero-body">
+        <h4 class="subtitle has-text-left">
+          🔥<span style="color: #ff3860">[NEW!]</span> We propose <b>MuRF</b>, a simple yet universally effective strategy to improve performance of VFMs at inference time.
+        </h4>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" style="background-color:#efeff081">
+    <div class="container is-max-desktop">
+      <!-- Abstract. -->
+      <div class="columns is-centered has-text-centered">
+        <div class="column is-six-fifths">
+          <h2 class="title is-3">Abstract</h2>
+          <div class="content has-text-justified">
+            <p>
+              Vision Foundation Models (VFMs) have become the cornerstone of modern computer vision, offering robust representations across a wide array of tasks. While recent advances allow these models to handle varying input sizes during training, inference typically remains restricted to a single, fixed scale. This prevalent single-scale paradigm overlooks a fundamental property of visual perception: varying resolutions offer complementary inductive biases, where low-resolution views excel at global semantic recognition and high-resolution views are essential for fine-grained refinement. In this work, we propose Multi-Resolution Fusion (MuRF), a simple yet universally effective strategy to harness this synergy at inference time. Instead of relying on a single view, MuRF constructs a unified representation by processing an image at multiple resolutions through a frozen VFM and fusing the resulting features. The universality of MuRF is its most compelling attribute. It is not tied to a specific architecture, serving instead as a fundamental, training-free enhancement to visual representation. We empirically validate this by applying MuRF to a broad spectrum of critical computer vision tasks across multiple distinct VFM families - primarily DINOv2, but also demonstrating successful generalization to contrastive models like SigLIP2.
+            </p>
+
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <section class="section">
+    <!-- Results. -->
+    <div class="columns is-centered has-text-centered">
+      <div class="column is-six-fifths">
+        <h2 class="title is-3"> Under Construction </h2>
+      </div>
+    </div>
+    <!-- </div> -->
+    <!--/ Results. -->
+    <div class="container is-max-desktop">
+
+      <div class="columns is-centered">
+        <div class="column is-full-width">
+          <div class="content has-text-justified">
+            <p>
+              Under Construction
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+
+  <section class="section" id="BibTeX">
+    <div class="container is-max-desktop content">
+      <h2 class="title">BibTeX</h2>
+      <pre>
+        <code>coming soon</code>
+      </pre>
+    </div>
+  </section>
+
+  <section class="section" id="Acknowledgement">
+    <div class="container is-max-desktop content">
+      <h2 class="title">Acknowledgement</h2>
+      <p>
+        This website is adapted from <a href="https://github.com/nerfies/nerfies.github.io">Nerfies</a>, licensed under
+        a <a rel="license" href="http://creativecommons.org/licenses/by-sa/4.0/">Creative
+          Commons Attribution-ShareAlike 4.0 International License</a>. We thank the LLaMA team for giving us access to
+        their models, and open-source projects, including Alpaca and Vicuna.
+      </p>
+
+    </div>
+  </section>
+
+
+</body>
+
+</html>
