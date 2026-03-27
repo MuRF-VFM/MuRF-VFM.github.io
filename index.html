@@ -534,13 +534,10 @@
       <h3 class="title is-4 mt-6">Analysis of Resolution and Feature Concatenation</h3>
       <div class="content has-text-justified">
         <p>
-          To show the benefits of <b>MuRF</b>, we conduct a controlled comparison against a standard feature concatenation baseline. To ensure a fair comparison over feature representation, we compare aggregating three distinct resolutions (MuRF) against aggregating three distinct encoder layers (Lin. 3).
+          We compare multi-scale feature fusion (<b>MuRF</b>) against multi-layer aggregation (Lin. 3). While MuRF excels at capturing fine-grained structural details (in-domain NYUd), intermediate Transformer layers retain robust semantic abstractions (zero-shot SUN RGB-D).
         </p>
         <p>
-          The results reveal a complementary relationship between multi-scale and multi-layer features. MuRF achieves superior performance on the in-domain NYU Depth V2 dataset (0.361 vs. 0.376 RMSE), suggesting that scaling effectively captures the fine-grained structural details required for precise metric depth estimation. Conversely, the multi-layer approach (Lin. 3) performs comparably to MuRF on the zero-shot SUN RGB-D dataset (0.418 vs. 0.419 RMSE). This aligns with the intuition that intermediate Transformer layers retain robust, generic semantic abstractions.
-        </p>
-        <p>
-          Crucially, the best performance is achieved by combining both methodologies. This demonstrates that MuRF and multi-layer feature concatenations are not mutually exclusive; rather, they offer orthogonal benefits for complementary performance.
+          Crucially, these approaches are <b>complementary</b>. Combining both methodologies yields the highest overall performance, demonstrating that spatial scaling and layer aggregation offer orthogonal benefits.
         </p>
       </div>
 
@@ -766,7 +763,7 @@
 
       <div class="content has-text-justified">
         <p>
-          we validate MuRF in a training-free setting on the <a href="https://www.mvtec.com/research-teaching/datasets/mvtec-ad-2">MVTec AD 2</a> benchmark, a challenging industrial inspection dataset.
+          We validate MuRF in a training-free setting on the <a href="https://www.mvtec.com/research-teaching/datasets/mvtec-ad-2">MVTec AD 2</a> benchmark, a challenging industrial inspection dataset.
         </p>
       </div>
 
