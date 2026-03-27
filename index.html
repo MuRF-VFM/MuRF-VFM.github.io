@@ -625,13 +625,6 @@
           We integrate <b>MuRF</b> into a Multimodal Large Language Model (MLLM) framework for Visual Question Answering (VQA). To verify how MuRF supports MLLMs, we apply it to multiple variants of LLaVA 1.5, swapping the original CLIP vision encoder for DINOv2 and SigLIP2.
         </p>
 
-        <h3 class="title is-4 mt-5">Zero Extra Sequence-Length Cost</h3>
-        <p>
-          To prevent a computational bottleneck in the LLM, we must strictly avoid increasing the token sequence length (kept at 576 visual tokens). Instead of appending multi-resolution tokens sequentially, features from the low resolution are spatially up-sampled and <b>concatenated patch-wise along the channel dimension</b> with the high-resolution features.
-        </p>
-        <p>
-          The LLM’s visual projector then maps these high-channel-dimension tokens back to the standard LLM hidden dimension. Crucially, this ensures the number of visual tokens fed into the LLM remains exactly the same as the single-resolution baseline, incurring <b>zero extra sequence-length computational cost</b>. MuRF maintains comparable VRAM usage and training/inference latency (e.g., 274 minutes to finetune vs. 270 minutes for the baseline).
-        </p>
       </div>
 
       <div class="columns is-centered">
