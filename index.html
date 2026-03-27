@@ -290,7 +290,7 @@
       <h3 class="title is-4">Multi-Resolution Feature Fusion</h3>
       <div class="content has-text-justified">
         <p>
-          Instead of relying on a single input scale, MuRF builds a feature pyramid directly from the input space. We resize the image to a set of scaling factors and pass each view through a frozen VFM encoder. To capture a richer semantic hierarchy, we extract features from multiple intermediate layers.
+          MuRF builds a feature pyramid directly from the input space. We resize the image to a set of scaling factors and pass each view through a frozen VFM encoder.
         </p>
         <p>
           Crucially, these patch-level feature maps are upsampled to a target spatial resolution and <b>concatenated along the channel dimension</b>. This creates a single, unified tensor that is spatially rich, semantically deep, and explicitly preserves the orthogonal signals of both macro and micro views without the destructive interference caused by mean-pooling or summation.
@@ -304,8 +304,8 @@
         </p>
         <ul>
           <li><b>Dense Prediction:</b> For tasks like semantic segmentation and depth estimation, we apply a simple convolutional head (e.g., a 1&times;1 convolution) to project the concatenated channels directly to the target output space.</li>
-          <li><b>Unsupervised Anomaly Detection:</b> We utilize a training-free nearest-neighbor approach, building memory banks across layer-resolution pairs and averaging the resulting distance scores to leverage the strengths of all views.</li>
           <li><b>Multimodal LLMs:</b> For Visual Question Answering (VQA), the MuRF tensor acts as the visual token sequence, passed through a lightweight perception module into the language model's word embedding space to enable multi-scale reasoning.</li>
+          <li><b>Unsupervised Anomaly Detection:</b> We utilize a training-free nearest-neighbor approach, building memory banks across layer-resolution pairs and averaging the resulting distance scores to leverage the strengths of all views.</li>
         </ul>
       </div>
 
