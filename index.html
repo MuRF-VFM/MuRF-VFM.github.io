@@ -11,6 +11,7 @@
   <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Google+Sans|Noto+Sans|Castoro">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.1/css/bulma.min.css">
   <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/jpswalsh/academicons@1/css/academicons.min.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css">
   <link rel="stylesheet" href="index.css">
@@ -268,27 +269,503 @@
   </section>
 
   <section class="section">
-    <!-- Results. -->
-    <div class="columns is-centered has-text-centered">
-      <div class="column is-six-fifths">
-        <h2 class="title is-3"> Under Construction </h2>
-      </div>
-    </div>
-    <!-- </div> -->
-    <!--/ Results. -->
     <div class="container is-max-desktop">
+      <h2 class="title is-3 has-text-centered">Approach</h2>
+
+      <div class="content has-text-justified">
+        <p>
+          Our goal is to extract a universal, scale-robust visual representation from a frozen Vision Foundation Model (VFM). The core of <b>MuRF</b> is motivated by a fundamental property of visual perception: low resolutions capture global context for robust <b>recognition</b>, while high resolutions provide fine-grained detail for precise <b>refinement</b>.
+        </p>
+      </div>
+
+      <div class="columns is-centered has-text-centered mb-6">
+        <div class="column is-full-width">
+          <img src="/assets/images/teaser-1.png" alt="MuRF Architecture Pipeline" style="width: 100%; border-radius: 8px;">
+          <p class="is-size-6 has-text-grey mt-2">
+            <i>Overview of Multi-Resolution Fusion (MuRF). We process an image pyramid through a frozen VFM, upsample the resulting feature maps to a common spatial resolution, and concatenate them channel-wise.</i>
+          </p>
+        </div>
+      </div>
+
+      <h3 class="title is-4">Multi-Resolution Feature Fusion</h3>
+      <div class="content has-text-justified">
+        <p>
+          Instead of relying on a single input scale, MuRF builds a feature pyramid directly from the input space. We resize the image to a set of scaling factors and pass each view through a frozen VFM encoder. To capture a richer semantic hierarchy, we extract features from multiple intermediate layers.
+        </p>
+        <p>
+          Crucially, these patch-level feature maps are upsampled to a target spatial resolution and <b>concatenated along the channel dimension</b>. This creates a single, unified tensor that is spatially rich, semantically deep, and explicitly preserves the orthogonal signals of both macro and micro views without the destructive interference caused by mean-pooling or summation.
+        </p>
+      </div>
+
+      <h3 class="title is-4 mt-5">Task-Specific Adaptation</h3>
+      <div class="content has-text-justified">
+        <p>
+          The resulting multi-resolution representation is inherently task-agnostic. We adapt it to various domains by attaching lightweight, task-specific heads while keeping the heavy VFM backbone completely frozen:
+        </p>
+        <ul>
+          <li><b>Dense Prediction:</b> For tasks like semantic segmentation and depth estimation, we apply a simple convolutional head (e.g., a 1&times;1 convolution) to project the concatenated channels directly to the target output space.</li>
+          <li><b>Unsupervised Anomaly Detection:</b> We utilize a training-free nearest-neighbor approach, building memory banks across layer-resolution pairs and averaging the resulting distance scores to leverage the strengths of all views.</li>
+          <li><b>Multimodal LLMs:</b> For Visual Question Answering (VQA), the MuRF tensor acts as the visual token sequence, passed through a lightweight perception module into the language model's word embedding space to enable multi-scale reasoning.</li>
+        </ul>
+      </div>
+
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container is-max-desktop">
+      <h2 class="title is-3 has-text-centered">Visual Question Answering (MLLMs)</h2>
+
+      <div class="content has-text-justified">
+        <p>
+          We integrate <b>MuRF</b> into a Multimodal Large Language Model (MLLM) framework for Visual Question Answering (VQA). To verify how MuRF supports MLLMs, we apply it to multiple variants of LLaVA 1.5, swapping the original CLIP vision encoder for DINOv2 and SigLIP2.
+        </p>
+
+        <h3 class="title is-4 mt-5">Zero Extra Sequence-Length Cost</h3>
+        <p>
+          To prevent a computational bottleneck in the LLM, we must strictly avoid increasing the token sequence length (kept at 576 visual tokens). Instead of appending multi-resolution tokens sequentially, features from the low resolution are spatially up-sampled and <b>concatenated patch-wise along the channel dimension</b> with the high-resolution features.
+        </p>
+        <p>
+          The LLM’s visual projector then maps these high-channel-dimension tokens back to the standard LLM hidden dimension. Crucially, this ensures the number of visual tokens fed into the LLM remains exactly the same as the single-resolution baseline, incurring <b>zero extra sequence-length computational cost</b>. MuRF maintains comparable VRAM usage and training/inference latency (e.g., 274 minutes to finetune vs. 270 minutes for the baseline).
+        </p>
+      </div>
 
       <div class="columns is-centered">
         <div class="column is-full-width">
-          <div class="content has-text-justified">
-            <p>
-              Under Construction
+          <details>
+            <summary class="button is-light is-fullwidth mb-4" style="cursor: pointer;">
+              <strong>&#9660; Show Table 3: LLaVA-MuRF VQA Performance</strong>
+            </summary>
+            <p class="is-size-6 has-text-centered mb-2">
+              <b>Table 3:</b> Performance across major VQA benchmarks. Equipping the MLLM with MuRF strongly improves multimodal understanding capacity regardless of whether DINOv2 or SigLIP2 is used.
             </p>
-          </div>
+            <div class="table-container">
+              <table class="table is-striped is-fullwidth is-hoverable is-narrow text-center" style="font-size: 0.9em;">
+                <thead>
+                <tr>
+                  <th rowspan="2" style="vertical-align: middle;">Vision Encoder</th>
+                  <th rowspan="2" style="vertical-align: middle;">Res.</th>
+                  <th colspan="2" class="has-text-centered">MME</th>
+                  <th rowspan="2" class="has-text-centered" style="vertical-align: middle;">Bias</th>
+                  <th rowspan="2" class="has-text-centered" style="vertical-align: middle;">V*</th>
+                  <th rowspan="2" class="has-text-centered" style="vertical-align: middle;">RW</th>
+                  <th rowspan="2" class="has-text-centered" style="vertical-align: middle;">MR</th>
+                  <th rowspan="2" class="has-text-centered" style="vertical-align: middle;">GQA</th>
+                  <th rowspan="2" class="has-text-centered" style="vertical-align: middle;">MMB</th>
+                  <th rowspan="2" class="has-text-centered" style="vertical-align: middle;">POPE</th>
+                </tr>
+                <tr>
+                  <th class="has-text-centered">Percept.</th>
+                  <th class="has-text-centered">Cogn.</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr>
+                  <td>CLIP (official LLaVA)</td>
+                  <td>336</td>
+                  <td class="has-text-centered">1511.4</td>
+                  <td class="has-text-centered">347.1</td>
+                  <td class="has-text-centered">16.2</td>
+                  <td class="has-text-centered">50.3</td>
+                  <td class="has-text-centered">56.1</td>
+                  <td class="has-text-centered">26.5</td>
+                  <td class="has-text-centered">62.0</td>
+                  <td class="has-text-centered">195.4</td>
+                  <td class="has-text-centered">86.9</td>
+                </tr>
+
+                <tr>
+                  <td rowspan="2" style="vertical-align: middle;">DINOv2</td>
+                  <td>336</td>
+                  <td class="has-text-centered">1291.6</td>
+                  <td class="has-text-centered">278.6</td>
+                  <td class="has-text-centered">17.3</td>
+                  <td class="has-text-centered">38.7</td>
+                  <td class="has-text-centered">52.3</td>
+                  <td class="has-text-centered">26.2</td>
+                  <td class="has-text-centered">62.1</td>
+                  <td class="has-text-centered">172.4</td>
+                  <td class="has-text-centered">87.1</td>
+                </tr>
+                <tr class="is-selected" style="background-color: #f5f5f5; color: inherit;">
+                  <td><b>224+336 (Ours)</b></td>
+                  <td class="has-text-centered">1357.1<br><small class="has-text-success">(+65.5)</small></td>
+                  <td class="has-text-centered">366.4<br><small class="has-text-success">(+87.8)</small></td>
+                  <td class="has-text-centered">17.7<br><small class="has-text-success">(+0.4)</small></td>
+                  <td class="has-text-centered">40.3<br><small class="has-text-success">(+1.6)</small></td>
+                  <td class="has-text-centered">53.6<br><small class="has-text-success">(+1.3)</small></td>
+                  <td class="has-text-centered">26.1<br><small class="has-text-danger">(-0.1)</small></td>
+                  <td class="has-text-centered">62.4<br><small class="has-text-success">(+0.3)</small></td>
+                  <td class="has-text-centered">173.1<br><small class="has-text-success">(+0.7)</small></td>
+                  <td class="has-text-centered">87.1<br><small class="has-text-grey">(0.0)</small></td>
+                </tr>
+
+                <tr>
+                  <td rowspan="2" style="vertical-align: middle;">CLIP+DINOv2</td>
+                  <td>336</td>
+                  <td class="has-text-centered">1403.4</td>
+                  <td class="has-text-centered">243.9</td>
+                  <td class="has-text-centered">15.8</td>
+                  <td class="has-text-centered">48.7</td>
+                  <td class="has-text-centered">53.6</td>
+                  <td class="has-text-centered">31.5</td>
+                  <td class="has-text-centered">62.2</td>
+                  <td class="has-text-centered">194.2</td>
+                  <td class="has-text-centered">86.4</td>
+                </tr>
+                <tr class="is-selected" style="background-color: #f5f5f5; color: inherit;">
+                  <td><b>224+336 (Ours)</b></td>
+                  <td class="has-text-centered">1471.2<br><small class="has-text-success">(+67.8)</small></td>
+                  <td class="has-text-centered">281.4<br><small class="has-text-success">(+37.5)</small></td>
+                  <td class="has-text-centered">16.3<br><small class="has-text-success">(+0.5)</small></td>
+                  <td class="has-text-centered">48.2<br><small class="has-text-danger">(-0.5)</small></td>
+                  <td class="has-text-centered">56.7<br><small class="has-text-success">(+3.1)</small></td>
+                  <td class="has-text-centered">31.8<br><small class="has-text-success">(+0.3)</small></td>
+                  <td class="has-text-centered">62.9<br><small class="has-text-success">(+0.7)</small></td>
+                  <td class="has-text-centered">198.8<br><small class="has-text-success">(+4.6)</small></td>
+                  <td class="has-text-centered"><b>87.4</b><br><small class="has-text-success">(+1.0)</small></td>
+                </tr>
+
+                <tr>
+                  <td rowspan="2" style="vertical-align: middle;">SigLIP2</td>
+                  <td>384</td>
+                  <td class="has-text-centered">1529.3</td>
+                  <td class="has-text-centered">355.4</td>
+                  <td class="has-text-centered">19.4</td>
+                  <td class="has-text-centered">44.0</td>
+                  <td class="has-text-centered">58.2</td>
+                  <td class="has-text-centered">33.1</td>
+                  <td class="has-text-centered">64.1</td>
+                  <td class="has-text-centered">211.7</td>
+                  <td class="has-text-centered">87.1</td>
+                </tr>
+                <tr class="is-selected" style="background-color: #f5f5f5; color: inherit;">
+                  <td><b>256+384 (Ours)</b></td>
+                  <td class="has-text-centered"><b>1545.7</b><br><small class="has-text-success">(+16.4)</small></td>
+                  <td class="has-text-centered"><b>371.4</b><br><small class="has-text-success">(+16.0)</small></td>
+                  <td class="has-text-centered"><b>19.7</b><br><small class="has-text-success">(+0.3)</small></td>
+                  <td class="has-text-centered">42.9<br><small class="has-text-danger">(-1.1)</small></td>
+                  <td class="has-text-centered"><b>58.4</b><br><small class="has-text-success">(+0.2)</small></td>
+                  <td class="has-text-centered"><b>33.3</b><br><small class="has-text-success">(+0.2)</small></td>
+                  <td class="has-text-centered"><b>64.5</b><br><small class="has-text-success">(+0.4)</small></td>
+                  <td class="has-text-centered"><b>216.9</b><br><small class="has-text-success">(+5.2)</small></td>
+                  <td class="has-text-centered">86.7<br><small class="has-text-danger">(-0.4)</small></td>
+                </tr>
+                </tbody>
+              </table>
+            </div>
+          </details>
         </div>
       </div>
+
     </div>
   </section>
+
+  <section class="section">
+    <div class="container is-max-desktop">
+      <h2 class="title is-3 has-text-centered">Semantic Segmentation</h2>
+
+      <div class="content has-text-justified">
+        <p>
+          We evaluate <b>MuRF</b> on dense prediction using the challenging ADE20K and PASCAL VOC benchmarks. Our baseline for comparison is a linear probing setup utilizing a frozen DINOv2-ViT-B/14 encoder with features extracted from a single input resolution.
+        </p>
+        <p>
+          By effectively combining the global context from low resolutions with the fine-grained details from high resolutions, MuRF produces a feature map inherently better suited for dense prediction. While training the linear head on MuRF representations takes approximately 1.3&times; longer than the single-resolution counterpart, it yields a significant performance boost over strong single-scale baselines.
+        </p>
+      </div>
+
+      <div class="columns is-centered">
+        <div class="column is-half">
+          <img src="/assets/images/seg_comparison_epoch_160-1.png" alt="ADE20K Segmentation Comparison" style="width:100%; border-radius: 8px;">
+          <p class="is-size-6 has-text-centered mt-2"><b>ADE20K</b></p>
+        </div>
+        <div class="column is-half">
+          <img src="/assets/images/seg_comparison_epoch_175-1.png" alt="PASCAL VOC Segmentation Comparison" style="width:100%; border-radius: 8px;">
+          <p class="is-size-6 has-text-centered mt-2"><b>PASCAL VOC</b></p>
+        </div>
+      </div>
+      <div class="columns is-centered">
+        <div class="column is-10">
+          <p class="is-size-6 has-text-centered has-text-grey">
+            <i>Qualitative semantic segmentation results. MuRF effectively merges holistic scene understanding with precise object boundaries compared to individual single-scale inputs.</i>
+          </p>
+        </div>
+      </div>
+
+      <h3 class="title is-4 mt-6">Quantitative Analysis</h3>
+      <div class="columns is-centered">
+        <div class="column is-full-width">
+          <details>
+            <summary class="button is-light is-fullwidth mb-4" style="cursor: pointer;">
+              <strong>&#9660; Show Semantic Segmentation Performance Table</strong>
+            </summary>
+            <p class="is-size-6 has-text-centered mb-2">
+              <b>Table 1 (Segmentation):</b> Performance in mIoU (%) on ADE20K and PASCAL VOC (higher is better). MuRF significantly outperforms single-scale baselines. <i>Rel. Improv measures relative improvement over the high-resolution DINOv2 baseline.</i>
+            </p>
+            <div class="table-container">
+              <table class="table is-striped is-fullwidth is-hoverable">
+                <thead>
+                <tr>
+                  <th style="vertical-align: middle;">Method</th>
+                  <th class="has-text-centered" style="vertical-align: middle;">Architecture</th>
+                  <th class="has-text-centered">ADE20K (mIoU &uarr;)</th>
+                  <th class="has-text-centered">PASCAL VOC (mIoU &uarr;)</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr>
+                  <td>OpenCLIP</td>
+                  <td class="has-text-centered">ViT-G/14</td>
+                  <td class="has-text-centered">39.3</td>
+                  <td class="has-text-centered">71.4</td>
+                </tr>
+                <tr>
+                  <td>MAE</td>
+                  <td class="has-text-centered">ViT-H/14</td>
+                  <td class="has-text-centered">33.3</td>
+                  <td class="has-text-centered">67.6</td>
+                </tr>
+                <tr>
+                  <td>DINO</td>
+                  <td class="has-text-centered">ViT-B/8</td>
+                  <td class="has-text-centered">31.8</td>
+                  <td class="has-text-centered">66.4</td>
+                </tr>
+                <tr>
+                  <td>iBOT</td>
+                  <td class="has-text-centered">ViT-L/16</td>
+                  <td class="has-text-centered">44.6</td>
+                  <td class="has-text-centered">82.3</td>
+                </tr>
+                <tr>
+                  <td colspan="4" class="has-text-grey has-background-white-ter"><strong>DINOv2 Baselines</strong></td>
+                </tr>
+                <tr>
+                  <td>Low Resolution</td>
+                  <td class="has-text-centered">ViT-B/14</td>
+                  <td class="has-text-centered">40.6</td>
+                  <td class="has-text-centered">71.2</td>
+                </tr>
+                <tr>
+                  <td>Medium Resolution</td>
+                  <td class="has-text-centered">ViT-B/14</td>
+                  <td class="has-text-centered">45.5</td>
+                  <td class="has-text-centered">78.9</td>
+                </tr>
+                <tr>
+                  <td>High Resolution</td>
+                  <td class="has-text-centered">ViT-B/14</td>
+                  <td class="has-text-centered"><u>46.1</u></td>
+                  <td class="has-text-centered"><u>82.5</u></td>
+                </tr>
+                <tr class="is-selected" style="background-color: #f5f5f5; color: inherit;">
+                  <td><b>MuRF (Ours)</b></td>
+                  <td class="has-text-centered"><b>ViT-B/14</b></td>
+                  <td class="has-text-centered"><b>47.4</b></td>
+                  <td class="has-text-centered"><b>83.5</b></td>
+                </tr>
+                <tr>
+                  <td colspan="2" class="has-text-right has-text-grey"><i>Relative Improvement:</i></td>
+                  <td class="has-text-centered has-text-success"><b>+2.8%</b></td>
+                  <td class="has-text-centered has-text-success"><b>+1.2%</b></td>
+                </tr>
+                </tbody>
+              </table>
+            </div>
+          </details>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container is-max-desktop">
+      <h2 class="title is-3 has-text-centered">Depth Estimation</h2>
+
+      <div class="content has-text-justified">
+        <p>
+          We evaluate <b>MuRF</b> on metric depth estimation to test both in-domain learning capability on NYU Depth V2 and zero-shot transfer capability on SUN RGB-D. Our evaluation employs two standard linear probing configurations: <b>Lin. 1</b> (utilizing features from the final transformer layer concatenated with the <code>[CLS]</code> token) and <b>Lin. 4</b> (same approach with additional concatenation of tokens from layers <code>l = {3, 6, 9, 12}</code>).
+        </p>
+      </div>
+
+      <div class="columns is-centered">
+        <div class="column is-half">
+          <img src="/assets/images/epoch_150_nyu-1.png" alt="NYUd Depth Estimation Comparison" style="width:100%; border-radius: 8px;">
+          <p class="is-size-6 has-text-centered mt-2"><b>NYU Depth V2</b> (In-domain)</p>
+        </div>
+        <div class="column is-half">
+          <img src="/assets/images/epoch_550_SUN-1.png" alt="SUN RGB-D Depth Estimation Comparison" style="width:100%; border-radius: 8px;">
+          <p class="is-size-6 has-text-centered mt-2"><b>SUN RGB-D</b> (Zero-shot)</p>
+        </div>
+      </div>
+      <div class="columns is-centered">
+        <div class="column is-10">
+          <p class="is-size-6 has-text-centered has-text-grey">
+            <i>Qualitative depth estimation results. We compare single-scale DINOv2 predictions at 0.5&times;, 1.0&times;, and 1.5&times; input resolutions with our MuRF fusion. By aggregating multi-resolution features, MuRF better preserves global scene structure while sharpening local geometry, producing smoother and more accurate depth maps.</i>
+          </p>
+        </div>
+      </div>
+
+      <h3 class="title is-4 mt-6">Quantitative Analysis</h3>
+      <div class="content has-text-justified">
+        <p>
+          As shown below, the model using our MuRF representation achieves substantially lower error rates across all configurations. This confirms that the fusion of multi-scale features allows the prediction head to better reason about both the overall scene geometry (captured by low resolutions) and precise object boundaries (captured by high resolutions) simultaneously.
+        </p>
+      </div>
+
+      <details>
+        <summary class="button is-light is-fullwidth mb-4" style="cursor: pointer;">
+          <strong>&#9660; Show Quantitative Analysis Table</strong>
+        </summary>
+        <div class="table-container">
+          <table class="table is-striped is-fullwidth is-hoverable">
+            <thead>
+            <tr>
+              <th rowspan="2" style="vertical-align: middle;">Method</th>
+              <th rowspan="2" style="vertical-align: middle;">Arch.</th>
+              <th colspan="2" class="has-text-centered">NYU Depth V2 (RMSE &darr;)</th>
+              <th colspan="2" class="has-text-centered">SUN RGB-D (RMSE &darr;)</th>
+            </tr>
+            <tr>
+              <th class="has-text-centered">Lin. 1</th>
+              <th class="has-text-centered">Lin. 4</th>
+              <th class="has-text-centered">Lin. 1</th>
+              <th class="has-text-centered">Lin. 4</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr>
+              <td>Low Resolution (0.5&times;)</td>
+              <td>ViT-B/14</td>
+              <td class="has-text-centered">0.423</td>
+              <td class="has-text-centered">0.408</td>
+              <td class="has-text-centered">0.463</td>
+              <td class="has-text-centered">0.439</td>
+            </tr>
+            <tr>
+              <td>Medium Resolution (1.0&times;)</td>
+              <td>ViT-B/14</td>
+              <td class="has-text-centered">0.389</td>
+              <td class="has-text-centered">0.373</td>
+              <td class="has-text-centered">0.432</td>
+              <td class="has-text-centered">0.416</td>
+            </tr>
+            <tr>
+              <td>High Resolution (1.5&times;)</td>
+              <td>ViT-B/14</td>
+              <td class="has-text-centered">0.394</td>
+              <td class="has-text-centered">0.380</td>
+              <td class="has-text-centered">0.445</td>
+              <td class="has-text-centered">0.426</td>
+            </tr>
+            <tr class="is-selected" style="background-color: #f5f5f5; color: inherit;">
+              <td><b>MuRF (Ours)</b></td>
+              <td>ViT-B/14</td>
+              <td class="has-text-centered"><b>0.361</b></td>
+              <td class="has-text-centered"><b>0.358</b></td>
+              <td class="has-text-centered"><b>0.419</b></td>
+              <td class="has-text-centered"><b>0.407</b></td>
+            </tr>
+            <tr>
+              <td colspan="2" class="has-text-right has-text-grey"><i>Rel. Improv over 1.0&times; baseline:</i></td>
+              <td class="has-text-centered has-text-success"><b>+7.0%</b></td>
+              <td class="has-text-centered has-text-success"><b>+4.0%</b></td>
+              <td class="has-text-centered has-text-success"><b>+2.9%</b></td>
+              <td class="has-text-centered has-text-success"><b>+2.2%</b></td>
+            </tr>
+            </tbody>
+          </table>
+        </div>
+      </details>
+
+      <h3 class="title is-4 mt-6">Analysis of Resolution and Feature Concatenation</h3>
+      <div class="content has-text-justified">
+        <p>
+          To show the benefits of <b>MuRF</b>, we conduct a controlled comparison against a standard feature concatenation baseline. To ensure a fair comparison over feature representation, we compare aggregating three distinct resolutions (MuRF) against aggregating three distinct encoder layers (Lin. 3).
+        </p>
+        <p>
+          The results reveal a complementary relationship between multi-scale and multi-layer features. MuRF achieves superior performance on the in-domain NYU Depth V2 dataset (0.361 vs. 0.376 RMSE), suggesting that scaling effectively captures the fine-grained structural details required for precise metric depth estimation. Conversely, the multi-layer approach (Lin. 3) performs comparably to MuRF on the zero-shot SUN RGB-D dataset (0.418 vs. 0.419 RMSE). This aligns with the intuition that intermediate Transformer layers retain robust, generic semantic abstractions.
+        </p>
+        <p>
+          Crucially, the best performance is achieved by combining both methodologies. This demonstrates that MuRF and multi-layer feature concatenations are not mutually exclusive; rather, they offer orthogonal benefits for complementary performance.
+        </p>
+      </div>
+
+      <div class="columns is-centered">
+        <div class="column is-full-width">
+          <details>
+            <summary class="button is-light is-fullwidth mb-4" style="cursor: pointer;">
+              <strong>&#9660; Show Table 5: Linear Probing Comparison</strong>
+            </summary>
+            <p class="is-size-6 has-text-centered mb-2">
+              <b>Table 5:</b> Linear probing comparison for depth estimation reporting RMSE. We evaluate on NYU Depth V2 and SUN RGB-D. <b>Lin. 1</b> utilizes only the final layer. <b>Lin. 3</b> utilizes layers {4, 8, 12}.
+            </p>
+            <div class="table-container">
+              <table class="table is-striped is-fullwidth is-hoverable">
+                <thead>
+                <tr>
+                  <th>Method</th>
+                  <th>Resolutions</th>
+                  <th>Layers</th>
+                  <th class="has-text-centered">NYU Depth V2 (RMSE &darr;)</th>
+                  <th class="has-text-centered">SUN RGB-D (RMSE &darr;)</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr>
+                  <td>Lin. 1</td>
+                  <td>1.0&times;</td>
+                  <td>12</td>
+                  <td class="has-text-centered">0.389</td>
+                  <td class="has-text-centered">0.432</td>
+                </tr>
+                <tr>
+                  <td><b>MuRF (Ours)</b></td>
+                  <td>{0.5, 1.0, 1.5}&times;</td>
+                  <td>12</td>
+                  <td class="has-text-centered"><u>0.361</u></td>
+                  <td class="has-text-centered">0.419</td>
+                </tr>
+                <tr>
+                  <td>Lin. 3</td>
+                  <td>0.5&times;</td>
+                  <td>{4, 8, 12}</td>
+                  <td class="has-text-centered">0.412</td>
+                  <td class="has-text-centered">0.443</td>
+                </tr>
+                <tr>
+                  <td>Lin. 3</td>
+                  <td>1.0&times;</td>
+                  <td>{4, 8, 12}</td>
+                  <td class="has-text-centered">0.376</td>
+                  <td class="has-text-centered"><u>0.418</u></td>
+                </tr>
+                <tr>
+                  <td>Lin. 3</td>
+                  <td>1.5&times;</td>
+                  <td>{4, 8, 12}</td>
+                  <td class="has-text-centered">0.380</td>
+                  <td class="has-text-centered">0.428</td>
+                </tr>
+                <tr class="is-selected" style="background-color: #f5f5f5; color: inherit;">
+                  <td><b>Lin. 3 + MuRF</b></td>
+                  <td>{0.5, 1.0, 1.5}&times;</td>
+                  <td>{4, 8, 12}</td>
+                  <td class="has-text-centered"><b>0.357</b></td>
+                  <td class="has-text-centered"><b>0.409</b></td>
+                </tr>
+                </tbody>
+              </table>
+            </div>
+          </details>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+
 
 
   <section class="section" id="BibTeX">
