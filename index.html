@@ -274,7 +274,8 @@
 
       <div class="content has-text-justified">
         <p>
-          Our goal is to extract a universal, scale-robust visual representation from a frozen Vision Foundation Model (VFM). The core of <b>MuRF</b> is motivated by a fundamental property of visual perception: low resolutions capture global context for robust <b>recognition</b>, while high resolutions provide fine-grained detail for precise <b>refinement</b>.
+          Our goal is to extract a universal, scale-robust visual representation from a frozen Vision Foundation Model (VFM).
+          The core of <b>MuRF</b> is motivated by a fundamental property of visual perception: low resolutions capture global context for robust <span style="color: #4286f4;">recognition</span>, while high resolutions provide fine-grained detail for precise <span style="color: #4286f4;">refinement</span>.
         </p>
       </div>
 
@@ -293,7 +294,7 @@
           MuRF builds a feature pyramid directly from the input space. We resize the image to a set of scaling factors and pass each view through a frozen VFM encoder.
         </p>
         <p>
-          Crucially, these patch-level feature maps are upsampled to a target spatial resolution and <b>concatenated along the channel dimension</b>. This creates a single, unified tensor that is spatially rich, semantically deep, and explicitly preserves the orthogonal signals of both macro and micro views without the destructive interference caused by mean-pooling or summation.
+          Crucially, these patch-level feature maps are upsampled to a target spatial resolution and concatenated along the channel dimension. This creates a single, unified tensor that is spatially rich, semantically deep, and explicitly preserves the orthogonal signals of both macro and micro views without the destructive interference caused by mean-pooling or summation.
         </p>
       </div>
 
