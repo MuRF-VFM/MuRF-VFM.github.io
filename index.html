@@ -314,155 +314,6 @@
 
   <section class="section">
     <div class="container is-max-desktop">
-      <h2 class="title is-3 has-text-centered">Visual Question Answering (MLLMs)</h2>
-
-      <div class="content has-text-justified">
-        <p>
-          We integrate <b>MuRF</b> into a Multimodal Large Language Model (MLLM) framework for Visual Question Answering (VQA). To verify how MuRF supports MLLMs, we apply it to multiple variants of LLaVA 1.5, swapping the original CLIP vision encoder for DINOv2 and SigLIP2.
-        </p>
-
-        <h3 class="title is-4 mt-5">Zero Extra Sequence-Length Cost</h3>
-        <p>
-          To prevent a computational bottleneck in the LLM, we must strictly avoid increasing the token sequence length (kept at 576 visual tokens). Instead of appending multi-resolution tokens sequentially, features from the low resolution are spatially up-sampled and <b>concatenated patch-wise along the channel dimension</b> with the high-resolution features.
-        </p>
-        <p>
-          The LLM’s visual projector then maps these high-channel-dimension tokens back to the standard LLM hidden dimension. Crucially, this ensures the number of visual tokens fed into the LLM remains exactly the same as the single-resolution baseline, incurring <b>zero extra sequence-length computational cost</b>. MuRF maintains comparable VRAM usage and training/inference latency (e.g., 274 minutes to finetune vs. 270 minutes for the baseline).
-        </p>
-      </div>
-
-      <div class="columns is-centered">
-        <div class="column is-full-width">
-          <details>
-            <summary class="button is-light is-fullwidth mb-4" style="cursor: pointer;">
-              <strong>&#9660; Show Table 3: LLaVA-MuRF VQA Performance</strong>
-            </summary>
-            <p class="is-size-6 has-text-centered mb-2">
-              <b>Table 3:</b> Performance across major VQA benchmarks. Equipping the MLLM with MuRF strongly improves multimodal understanding capacity regardless of whether DINOv2 or SigLIP2 is used.
-            </p>
-            <div class="table-container">
-              <table class="table is-striped is-fullwidth is-hoverable is-narrow text-center" style="font-size: 0.9em;">
-                <thead>
-                <tr>
-                  <th rowspan="2" style="vertical-align: middle;">Vision Encoder</th>
-                  <th rowspan="2" style="vertical-align: middle;">Res.</th>
-                  <th colspan="2" class="has-text-centered">MME</th>
-                  <th rowspan="2" class="has-text-centered" style="vertical-align: middle;">Bias</th>
-                  <th rowspan="2" class="has-text-centered" style="vertical-align: middle;">V*</th>
-                  <th rowspan="2" class="has-text-centered" style="vertical-align: middle;">RW</th>
-                  <th rowspan="2" class="has-text-centered" style="vertical-align: middle;">MR</th>
-                  <th rowspan="2" class="has-text-centered" style="vertical-align: middle;">GQA</th>
-                  <th rowspan="2" class="has-text-centered" style="vertical-align: middle;">MMB</th>
-                  <th rowspan="2" class="has-text-centered" style="vertical-align: middle;">POPE</th>
-                </tr>
-                <tr>
-                  <th class="has-text-centered">Percept.</th>
-                  <th class="has-text-centered">Cogn.</th>
-                </tr>
-                </thead>
-                <tbody>
-                <tr>
-                  <td>CLIP (official LLaVA)</td>
-                  <td>336</td>
-                  <td class="has-text-centered">1511.4</td>
-                  <td class="has-text-centered">347.1</td>
-                  <td class="has-text-centered">16.2</td>
-                  <td class="has-text-centered">50.3</td>
-                  <td class="has-text-centered">56.1</td>
-                  <td class="has-text-centered">26.5</td>
-                  <td class="has-text-centered">62.0</td>
-                  <td class="has-text-centered">195.4</td>
-                  <td class="has-text-centered">86.9</td>
-                </tr>
-
-                <tr>
-                  <td rowspan="2" style="vertical-align: middle;">DINOv2</td>
-                  <td>336</td>
-                  <td class="has-text-centered">1291.6</td>
-                  <td class="has-text-centered">278.6</td>
-                  <td class="has-text-centered">17.3</td>
-                  <td class="has-text-centered">38.7</td>
-                  <td class="has-text-centered">52.3</td>
-                  <td class="has-text-centered">26.2</td>
-                  <td class="has-text-centered">62.1</td>
-                  <td class="has-text-centered">172.4</td>
-                  <td class="has-text-centered">87.1</td>
-                </tr>
-                <tr class="is-selected" style="background-color: #f5f5f5; color: inherit;">
-                  <td><b>224+336 (Ours)</b></td>
-                  <td class="has-text-centered">1357.1<br><small class="has-text-success">(+65.5)</small></td>
-                  <td class="has-text-centered">366.4<br><small class="has-text-success">(+87.8)</small></td>
-                  <td class="has-text-centered">17.7<br><small class="has-text-success">(+0.4)</small></td>
-                  <td class="has-text-centered">40.3<br><small class="has-text-success">(+1.6)</small></td>
-                  <td class="has-text-centered">53.6<br><small class="has-text-success">(+1.3)</small></td>
-                  <td class="has-text-centered">26.1<br><small class="has-text-danger">(-0.1)</small></td>
-                  <td class="has-text-centered">62.4<br><small class="has-text-success">(+0.3)</small></td>
-                  <td class="has-text-centered">173.1<br><small class="has-text-success">(+0.7)</small></td>
-                  <td class="has-text-centered">87.1<br><small class="has-text-grey">(0.0)</small></td>
-                </tr>
-
-                <tr>
-                  <td rowspan="2" style="vertical-align: middle;">CLIP+DINOv2</td>
-                  <td>336</td>
-                  <td class="has-text-centered">1403.4</td>
-                  <td class="has-text-centered">243.9</td>
-                  <td class="has-text-centered">15.8</td>
-                  <td class="has-text-centered">48.7</td>
-                  <td class="has-text-centered">53.6</td>
-                  <td class="has-text-centered">31.5</td>
-                  <td class="has-text-centered">62.2</td>
-                  <td class="has-text-centered">194.2</td>
-                  <td class="has-text-centered">86.4</td>
-                </tr>
-                <tr class="is-selected" style="background-color: #f5f5f5; color: inherit;">
-                  <td><b>224+336 (Ours)</b></td>
-                  <td class="has-text-centered">1471.2<br><small class="has-text-success">(+67.8)</small></td>
-                  <td class="has-text-centered">281.4<br><small class="has-text-success">(+37.5)</small></td>
-                  <td class="has-text-centered">16.3<br><small class="has-text-success">(+0.5)</small></td>
-                  <td class="has-text-centered">48.2<br><small class="has-text-danger">(-0.5)</small></td>
-                  <td class="has-text-centered">56.7<br><small class="has-text-success">(+3.1)</small></td>
-                  <td class="has-text-centered">31.8<br><small class="has-text-success">(+0.3)</small></td>
-                  <td class="has-text-centered">62.9<br><small class="has-text-success">(+0.7)</small></td>
-                  <td class="has-text-centered">198.8<br><small class="has-text-success">(+4.6)</small></td>
-                  <td class="has-text-centered"><b>87.4</b><br><small class="has-text-success">(+1.0)</small></td>
-                </tr>
-
-                <tr>
-                  <td rowspan="2" style="vertical-align: middle;">SigLIP2</td>
-                  <td>384</td>
-                  <td class="has-text-centered">1529.3</td>
-                  <td class="has-text-centered">355.4</td>
-                  <td class="has-text-centered">19.4</td>
-                  <td class="has-text-centered">44.0</td>
-                  <td class="has-text-centered">58.2</td>
-                  <td class="has-text-centered">33.1</td>
-                  <td class="has-text-centered">64.1</td>
-                  <td class="has-text-centered">211.7</td>
-                  <td class="has-text-centered">87.1</td>
-                </tr>
-                <tr class="is-selected" style="background-color: #f5f5f5; color: inherit;">
-                  <td><b>256+384 (Ours)</b></td>
-                  <td class="has-text-centered"><b>1545.7</b><br><small class="has-text-success">(+16.4)</small></td>
-                  <td class="has-text-centered"><b>371.4</b><br><small class="has-text-success">(+16.0)</small></td>
-                  <td class="has-text-centered"><b>19.7</b><br><small class="has-text-success">(+0.3)</small></td>
-                  <td class="has-text-centered">42.9<br><small class="has-text-danger">(-1.1)</small></td>
-                  <td class="has-text-centered"><b>58.4</b><br><small class="has-text-success">(+0.2)</small></td>
-                  <td class="has-text-centered"><b>33.3</b><br><small class="has-text-success">(+0.2)</small></td>
-                  <td class="has-text-centered"><b>64.5</b><br><small class="has-text-success">(+0.4)</small></td>
-                  <td class="has-text-centered"><b>216.9</b><br><small class="has-text-success">(+5.2)</small></td>
-                  <td class="has-text-centered">86.7<br><small class="has-text-danger">(-0.4)</small></td>
-                </tr>
-                </tbody>
-              </table>
-            </div>
-          </details>
-        </div>
-      </div>
-
-    </div>
-  </section>
-
-  <section class="section">
-    <div class="container is-max-desktop">
       <h2 class="title is-3 has-text-centered">Semantic Segmentation</h2>
 
       <div class="content has-text-justified">
@@ -765,6 +616,168 @@
     </div>
   </section>
 
+  <section class="section">
+    <div class="container is-max-desktop">
+      <h2 class="title is-3 has-text-centered">Visual Question Answering (MLLMs)</h2>
+
+      <div class="content has-text-justified">
+        <p>
+          We integrate <b>MuRF</b> into a Multimodal Large Language Model (MLLM) framework for Visual Question Answering (VQA). To verify how MuRF supports MLLMs, we apply it to multiple variants of LLaVA 1.5, swapping the original CLIP vision encoder for DINOv2 and SigLIP2.
+        </p>
+
+        <h3 class="title is-4 mt-5">Zero Extra Sequence-Length Cost</h3>
+        <p>
+          To prevent a computational bottleneck in the LLM, we must strictly avoid increasing the token sequence length (kept at 576 visual tokens). Instead of appending multi-resolution tokens sequentially, features from the low resolution are spatially up-sampled and <b>concatenated patch-wise along the channel dimension</b> with the high-resolution features.
+        </p>
+        <p>
+          The LLM’s visual projector then maps these high-channel-dimension tokens back to the standard LLM hidden dimension. Crucially, this ensures the number of visual tokens fed into the LLM remains exactly the same as the single-resolution baseline, incurring <b>zero extra sequence-length computational cost</b>. MuRF maintains comparable VRAM usage and training/inference latency (e.g., 274 minutes to finetune vs. 270 minutes for the baseline).
+        </p>
+      </div>
+
+      <div class="columns is-centered">
+        <div class="column is-full-width">
+          <details>
+            <summary class="button is-light is-fullwidth mb-4" style="cursor: pointer;">
+              <strong>&#9660; Show Table 3: LLaVA-MuRF VQA Performance</strong>
+            </summary>
+            <p class="is-size-6 has-text-centered mb-2">
+              <b>Table 3:</b> Performance across major VQA benchmarks. Equipping the MLLM with MuRF strongly improves multimodal understanding capacity regardless of whether DINOv2 or SigLIP2 is used.
+            </p>
+            <div class="table-container">
+              <table class="table is-striped is-fullwidth is-hoverable is-narrow text-center" style="font-size: 0.9em;">
+                <thead>
+                <tr>
+                  <th rowspan="2" style="vertical-align: middle;">Vision Encoder</th>
+                  <th rowspan="2" style="vertical-align: middle;">Res.</th>
+                  <th colspan="2" class="has-text-centered">MME</th>
+                  <th rowspan="2" class="has-text-centered" style="vertical-align: middle;">Bias</th>
+                  <th rowspan="2" class="has-text-centered" style="vertical-align: middle;">V*</th>
+                  <th rowspan="2" class="has-text-centered" style="vertical-align: middle;">RW</th>
+                  <th rowspan="2" class="has-text-centered" style="vertical-align: middle;">MR</th>
+                  <th rowspan="2" class="has-text-centered" style="vertical-align: middle;">GQA</th>
+                  <th rowspan="2" class="has-text-centered" style="vertical-align: middle;">MMB</th>
+                  <th rowspan="2" class="has-text-centered" style="vertical-align: middle;">POPE</th>
+                </tr>
+                <tr>
+                  <th class="has-text-centered">Percept.</th>
+                  <th class="has-text-centered">Cogn.</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr>
+                  <td>CLIP (official LLaVA)</td>
+                  <td>336</td>
+                  <td class="has-text-centered">1511.4</td>
+                  <td class="has-text-centered">347.1</td>
+                  <td class="has-text-centered">16.2</td>
+                  <td class="has-text-centered">50.3</td>
+                  <td class="has-text-centered">56.1</td>
+                  <td class="has-text-centered">26.5</td>
+                  <td class="has-text-centered">62.0</td>
+                  <td class="has-text-centered">195.4</td>
+                  <td class="has-text-centered">86.9</td>
+                </tr>
+
+                <tr>
+                  <td rowspan="2" style="vertical-align: middle;">DINOv2</td>
+                  <td>336</td>
+                  <td class="has-text-centered">1291.6</td>
+                  <td class="has-text-centered">278.6</td>
+                  <td class="has-text-centered">17.3</td>
+                  <td class="has-text-centered">38.7</td>
+                  <td class="has-text-centered">52.3</td>
+                  <td class="has-text-centered">26.2</td>
+                  <td class="has-text-centered">62.1</td>
+                  <td class="has-text-centered">172.4</td>
+                  <td class="has-text-centered">87.1</td>
+                </tr>
+                <tr class="is-selected" style="background-color: #f5f5f5; color: inherit;">
+                  <td><b>224+336 (Ours)</b></td>
+                  <td class="has-text-centered">1357.1<br><small class="has-text-success">(+65.5)</small></td>
+                  <td class="has-text-centered">366.4<br><small class="has-text-success">(+87.8)</small></td>
+                  <td class="has-text-centered">17.7<br><small class="has-text-success">(+0.4)</small></td>
+                  <td class="has-text-centered">40.3<br><small class="has-text-success">(+1.6)</small></td>
+                  <td class="has-text-centered">53.6<br><small class="has-text-success">(+1.3)</small></td>
+                  <td class="has-text-centered">26.1<br><small class="has-text-danger">(-0.1)</small></td>
+                  <td class="has-text-centered">62.4<br><small class="has-text-success">(+0.3)</small></td>
+                  <td class="has-text-centered">173.1<br><small class="has-text-success">(+0.7)</small></td>
+                  <td class="has-text-centered">87.1<br><small class="has-text-grey">(0.0)</small></td>
+                </tr>
+
+                <tr>
+                  <td rowspan="2" style="vertical-align: middle;">CLIP+DINOv2</td>
+                  <td>336</td>
+                  <td class="has-text-centered">1403.4</td>
+                  <td class="has-text-centered">243.9</td>
+                  <td class="has-text-centered">15.8</td>
+                  <td class="has-text-centered">48.7</td>
+                  <td class="has-text-centered">53.6</td>
+                  <td class="has-text-centered">31.5</td>
+                  <td class="has-text-centered">62.2</td>
+                  <td class="has-text-centered">194.2</td>
+                  <td class="has-text-centered">86.4</td>
+                </tr>
+                <tr class="is-selected" style="background-color: #f5f5f5; color: inherit;">
+                  <td><b>224+336 (Ours)</b></td>
+                  <td class="has-text-centered">1471.2<br><small class="has-text-success">(+67.8)</small></td>
+                  <td class="has-text-centered">281.4<br><small class="has-text-success">(+37.5)</small></td>
+                  <td class="has-text-centered">16.3<br><small class="has-text-success">(+0.5)</small></td>
+                  <td class="has-text-centered">48.2<br><small class="has-text-danger">(-0.5)</small></td>
+                  <td class="has-text-centered">56.7<br><small class="has-text-success">(+3.1)</small></td>
+                  <td class="has-text-centered">31.8<br><small class="has-text-success">(+0.3)</small></td>
+                  <td class="has-text-centered">62.9<br><small class="has-text-success">(+0.7)</small></td>
+                  <td class="has-text-centered">198.8<br><small class="has-text-success">(+4.6)</small></td>
+                  <td class="has-text-centered"><b>87.4</b><br><small class="has-text-success">(+1.0)</small></td>
+                </tr>
+
+                <tr>
+                  <td rowspan="2" style="vertical-align: middle;">SigLIP2</td>
+                  <td>384</td>
+                  <td class="has-text-centered">1529.3</td>
+                  <td class="has-text-centered">355.4</td>
+                  <td class="has-text-centered">19.4</td>
+                  <td class="has-text-centered">44.0</td>
+                  <td class="has-text-centered">58.2</td>
+                  <td class="has-text-centered">33.1</td>
+                  <td class="has-text-centered">64.1</td>
+                  <td class="has-text-centered">211.7</td>
+                  <td class="has-text-centered">87.1</td>
+                </tr>
+                <tr class="is-selected" style="background-color: #f5f5f5; color: inherit;">
+                  <td><b>256+384 (Ours)</b></td>
+                  <td class="has-text-centered"><b>1545.7</b><br><small class="has-text-success">(+16.4)</small></td>
+                  <td class="has-text-centered"><b>371.4</b><br><small class="has-text-success">(+16.0)</small></td>
+                  <td class="has-text-centered"><b>19.7</b><br><small class="has-text-success">(+0.3)</small></td>
+                  <td class="has-text-centered">42.9<br><small class="has-text-danger">(-1.1)</small></td>
+                  <td class="has-text-centered"><b>58.4</b><br><small class="has-text-success">(+0.2)</small></td>
+                  <td class="has-text-centered"><b>33.3</b><br><small class="has-text-success">(+0.2)</small></td>
+                  <td class="has-text-centered"><b>64.5</b><br><small class="has-text-success">(+0.4)</small></td>
+                  <td class="has-text-centered"><b>216.9</b><br><small class="has-text-success">(+5.2)</small></td>
+                  <td class="has-text-centered">86.7<br><small class="has-text-danger">(-0.4)</small></td>
+                </tr>
+                </tbody>
+              </table>
+            </div>
+          </details>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+
+  <section class="section">
+    <div class="container is-max-desktop">
+      <h2 class="title is-3 has-text-centered">Unsupervised Anomaly Detection</h2>
+
+      <div class="content has-text-justified">
+        <p>
+          Work in Progress
+        </p>
+      </div>
+
+    </div>
+  </section>
 
 
 
